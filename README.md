@@ -1,2 +1,2 @@
 # sefaz_mt
-tranforming date into tidyverse pattern
+tranforming data into tidyverse pattern
