@@ -12,8 +12,6 @@ curl::curl_download(endereco, arquivo_local)
 
 # Transforming Microdata
 
-#icms_cnae_arquivo <- nome_arquivo_destino
-
 arquivo_folhas <- readxl::excel_sheets(arquivo_local)
 
 arquivo_vetor <- vector(mode = 'list', length = (length(arquivo_folhas)))
@@ -27,23 +25,14 @@ process_data <- function(entrada) {
                                      "date", "date", "date", "date", "date",
                                      "date", "text"))
   # extracting column names
-#arquivo_variaveis <- if (anyNA(arquivo_variaveis[6,])) {
-#  arquivo_variaveis[7,]}  else {arquivo_variaveis[6,]}
 
-#arquivo_variaveis
+arquivo_variaveis <-
+  if(!anyNA(arquivo_variaveis[5,])){arquivo_variaveis[5,]}else{
+    if(!anyNA(arquivo_variaveis[6,])){arquivo_variaveis[6,]}else{
+    if(!anyNA(arquivo_variaveis[7,])){arquivo_variaveis[7,]}else{
+    }}}
 
-#arquivo_variaveis <- if (!anyNA(arquivo_variaveis[6,])) {
-#  arquivo_variaveis[6,]}  else {arquivo_variaveis[7,]}
-
-arquivo_variaveis <- if (!anyNA(arquivo_variaveis[6,])) {
-  arquivo_variaveis[6,] 
-}  else if (anyNA(arquivo_variaveis[7])) {
-  arquivo_variaveis[7,]
-} else if (anyNA(arquivo_variaveis[8])) {
-  arquivo_variaveis[8] 
-  }
-
-#arquivo_variaveis[5,]  
+#arquivo_variaveis_vetor  
   
   # creating list to store values of a vector
   arquivo_variaveis_vetor <- vector(length = ncol(arquivo_variaveis))
@@ -58,8 +47,9 @@ arquivo_variaveis <- if (!anyNA(arquivo_variaveis[6,])) {
   arquivo <- arquivo |> dplyr::rename_with(~arquivo_variaveis_vetor,
                                            .cols = 1:ncol(arquivo))
   arquivo <- arquivo |>
-    dplyr::filter(!stringr::str_detect(`Código do Município`, "Código|Total|1.1.1.2|Fonte")) |>
-    dplyr::select(!Acumulado) |>
+    dplyr::filter(!stringr::str_detect(`Código do Município`,
+                                       "Código|Total|1.1.1.2|Fonte")) |>
+    dplyr::select(!contains("Acumulado|TOTAL")) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
 
@@ -70,8 +60,6 @@ for(i in seq_along(arquivo_folhas)){
   }, error = function(err){warning("file not processed")})
   
 }
-
-arquivo_vetor
 
 arquivo_vetor <- arquivo_vetor |> dplyr::bind_rows()
 
