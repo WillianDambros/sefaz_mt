@@ -49,7 +49,7 @@ arquivo_variaveis <-
   arquivo <- arquivo |>
     dplyr::filter(!stringr::str_detect(`Código do Município`,
                                        "Código|Total|1.1.1.2|Fonte")) |>
-    dplyr::select(!contains("Acumulado|TOTAL")) |>
+    dplyr::select(!matches("Acumulado|TOTAL")) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
 
@@ -73,4 +73,5 @@ nome_arquivo_csv <- "sefaz_mt_receita_itcd"
 caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".txt")
 
 readr::write_csv2(sefaz_mt_receita_itcd,
+                  caminho_arquivo)
                   caminho_arquivo)
