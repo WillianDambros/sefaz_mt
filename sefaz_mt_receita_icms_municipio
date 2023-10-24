@@ -27,7 +27,18 @@ process_data <- function(entrada) {
                                      "date", "date", "date", "date", "date",
                                      "date", "text"))
   # extracting column names
-  arquivo_variaveis <- arquivo_variaveis[6,] |> dplyr::mutate(...1 = stringr::str_replace_all(...1,"[íìîïi]",""))
+  arquivo_variaveis <-
+    if(!anyNA(arquivo_variaveis[5,])){arquivo_variaveis[5,]}else{
+      if(!anyNA(arquivo_variaveis[6,])){arquivo_variaveis[6,]}else{
+        if(!anyNA(arquivo_variaveis[7,])){arquivo_variaveis[7,]}else{
+        }}} |>
+    dplyr::mutate(...1 = stringr::str_replace_all(...1,"[íìîïi]",""))
+  
+  # corrigindo bug folhas 09:11
+  
+  arquivo_variaveis <- arquivo_variaveis  |>
+    dplyr::mutate(...1 = stringr::str_replace_all(...1,"[íìîïi]",""))
+  
   # creating list to store values of a vector
   arquivo_variaveis_vetor <- vector(length = ncol(arquivo_variaveis))
   # store properly the values
@@ -40,9 +51,10 @@ process_data <- function(entrada) {
   
   arquivo <- arquivo |> dplyr::rename_with(~arquivo_variaveis_vetor,
                                                .cols = 1:ncol(arquivo))
+  
   arquivo <- arquivo |>
     dplyr::filter(!stringr::str_detect(`COD Muncpo`, "COD|Total|Fonte")) |>
-    dplyr::select(!Acumulado) |>
+    dplyr::select(!matches("Acumulado|TOTAL")) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
 
@@ -53,8 +65,6 @@ for(i in seq_along(arquivo_folhas)){
   }, error = function(err){warning("file not processed")})
   
 }
-
-arquivo_vetor
 
 arquivo_vetor <- arquivo_vetor |> dplyr::bind_rows()
 
