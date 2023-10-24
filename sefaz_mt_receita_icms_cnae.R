@@ -63,6 +63,21 @@ sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows()
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
+
+decodificador_endereco <-
+  "Z:/rstudio/sefaz_mt/receita/compilado_decodificador.xlsx"
+
+decodificador_cnae <- readxl::read_xlsx(decodificador_endereco, sheet = "cnae",
+                                        col_types = "text")
+
+sefaz_icms_cnae <- sefaz_icms_cnae |>
+  dplyr::left_join(decodificador_cnae,
+                   by = dplyr::join_by(
+                     SUBCLASSE == cnae_subclasse_codigo_7d)) |>
+  dplyr::select(!matches(
+    paste0("cnae_secao_codigo_sigla1d|cnae_divisao_codigo",
+           "_2d|cnae_grupo_codigo_3d|cnae_classe_codigo_5d")))
+
 # Writing novocaged
 
 nome_arquivo_csv <- "sefaz_mt_receita_icms_cnae"
