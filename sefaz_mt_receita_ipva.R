@@ -27,11 +27,12 @@ process_data <- function(entrada) {
                                      "date", "date", "date", "date", "date",
                                      "date", "text"))
   # extracting column names
-  if (is.null(arquivo_variaveis[7,])) {
-    arquivo_variaveis <- arquivo_variaveis[6,]
-  } else {
-    arquivo_variaveis <- arquivo_variaveis[7,]
-}
+  arquivo_variaveis <-
+    if(!anyNA(arquivo_variaveis[5,])){arquivo_variaveis[5,]}else{
+      if(!anyNA(arquivo_variaveis[6,])){arquivo_variaveis[6,]}else{
+        if(!anyNA(arquivo_variaveis[7,])){arquivo_variaveis[7,]}else{
+        }}}
+  
   # creating list to store values of a vector
   arquivo_variaveis_vetor <- vector(length = ncol(arquivo_variaveis))
   # store properly the values
@@ -39,14 +40,15 @@ process_data <- function(entrada) {
     arquivo_variaveis_vetor[i] <- as.character(arquivo_variaveis[[i]])
   }
   # reading data
-  arquivo <- readxl::read_excel(arquivo_local, sheet = entrada,
+  arquivo <- readxl::read_excel(arquivo_local, sheet = arquivo_folhas[9],
                                 col_names = F, col_types = "text")
   
   arquivo <- arquivo |> dplyr::rename_with(~arquivo_variaveis_vetor,
                                            .cols = 1:ncol(arquivo))
   arquivo <- arquivo |>
-    dplyr::filter(!stringr::str_detect(`Código do Município`, "Código|Total|1.1.1.2|Fonte")) |>
-    dplyr::select(!Acumulado) |>
+    dplyr::filter(!stringr::str_detect(`Código do Município`,
+                                       "Código|Total|1.1.1.2|Fonte")) |>
+    dplyr::select(!matches("Acumulado|TOTAL")) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
 
