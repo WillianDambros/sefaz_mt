@@ -61,6 +61,8 @@ for(i in seq_along(arquivo_folhas)){
   
 }
 
+arquivo_vetor
+
 arquivo_vetor <- arquivo_vetor |> dplyr::bind_rows()
 
 sefaz_mt_receita_itcd <- arquivo_vetor |>
@@ -73,5 +75,4 @@ nome_arquivo_csv <- "sefaz_mt_receita_itcd"
 caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".txt")
 
 readr::write_csv2(sefaz_mt_receita_itcd,
-                  caminho_arquivo)
                   caminho_arquivo)
