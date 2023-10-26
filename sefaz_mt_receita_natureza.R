@@ -30,7 +30,11 @@ process_data <- function(entrada) {
                                      "date", "text"))
   # extracting column names
   
-  arquivo_variaveis <-  arquivo_variaveis[7,]
+  arquivo_variaveis <-
+    if(!anyNA(arquivo_variaveis[5,])){arquivo_variaveis[5,]}else{
+      if(!anyNA(arquivo_variaveis[6,])){arquivo_variaveis[6,]}else{
+        if(!anyNA(arquivo_variaveis[7,])){arquivo_variaveis[7,]}else{
+        }}}
   
   # creating list to store values of a vector
   arquivo_variaveis_vetor <- vector(length = ncol(arquivo_variaveis))
