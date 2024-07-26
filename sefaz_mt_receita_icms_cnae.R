@@ -1,25 +1,25 @@
 # Downloading arquive ICMS_CNAE
 
+#### encontrar o bug da coluna que não sai, e remover os NA no R "" ou 0
+
 icms_cnae_endereco <- 
   paste0("https://www5.sefaz.mt.gov.br/documents/6071037/51381700/",
          "1-+ICMS+por+CNAE+e+Grupo+CNAE.xlsx/",
          "0061779d-ce51-8852-fa19-94a757a5fad7?t=1695161941480")
 
 nome_destino <- 
-  paste0("Z:/rstudio/sefaz_mt/receita/sefaz_mt_receita_icms_cnae.R",
-         "icms_cnae", ".xlsx")
+  paste0(getwd(),
+         "/icms_cnae", ".xlsx")
 
 curl::curl_download(icms_cnae_endereco, nome_destino)
 
 # Transforming Microdata
 
-icms_cnae_arquivo <-
-  "Z:/rstudio/sefaz_mt/receita/sefaz_mt_receita_icms_cnae.Ricms_cnae.xlsx"
+icms_cnae_arquivo <- paste0(getwd(), "/icms_cnae", ".xlsx")
 
 icms_cnae_folhas <- readxl::excel_sheets(icms_cnae_arquivo)
 
 icms_cnae_vetor <- vector(mode = 'list', length = (length(icms_cnae_folhas)))
-
 
 process_icms_cnae_data <- function(entrada) {
   # read to define columns names
@@ -44,16 +44,16 @@ process_icms_cnae_data <- function(entrada) {
   icms_cnae <- icms_cnae |> dplyr::rename_with(~icms_cnae_names_vetor,
                                                .cols = 1:ncol(icms_cnae))
   icms_cnae <- icms_cnae |>
-    dplyr::filter(!stringr::str_detect(SEÇÃO, "SEÇÃO|TOTAL|FONTE|Obs|Soma")) |>
+    dplyr::filter(!stringr::str_detect(SEÇÃO, "SEÇÃO|TOTAL|FONTE|Obs|Soma|
+                                       Circulação|Adicional")) |>
     dplyr::select(!TOTAL) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
 
-
 for(i in seq_along(icms_cnae_folhas)){
   
   tryCatch({
-  icms_cnae_vetor[[i]] <- process_icms_cnae_data(icms_cnae_folhas[i])
+    icms_cnae_vetor[[i]] <- process_icms_cnae_data(icms_cnae_folhas[i])
   }, error = function(err){warning("file not processed")})
   
 }
@@ -64,8 +64,7 @@ sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
 
-decodificador_endereco <-
-  "Z:/rstudio/sefaz_mt/receita/compilado_decodificador.xlsx"
+decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
 
 decodificador_cnae <- readxl::read_xlsx(decodificador_endereco, sheet = "cnae",
                                         col_types = "text")
@@ -73,7 +72,7 @@ decodificador_cnae <- readxl::read_xlsx(decodificador_endereco, sheet = "cnae",
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::left_join(decodificador_cnae,
                    by = dplyr::join_by(
-                     SUBCLASSE == cnae_subclasse_codigo_7d)) |>
+                     SUBCLASSE == cnae_subclasse_codigo_7d_sem0)) |>
   dplyr::select(!matches(
     paste0("cnae_secao_codigo_sigla1d|cnae_divisao_codigo",
            "_2d|cnae_grupo_codigo_3d|cnae_classe_codigo_5d")))
