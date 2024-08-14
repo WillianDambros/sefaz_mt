@@ -45,7 +45,7 @@ process_icms_cnae_data <- function(entrada) {
                                                .cols = 1:ncol(icms_cnae))
   icms_cnae <- icms_cnae |>
     dplyr::filter(!stringr::str_detect(SEÇÃO, "SEÇÃO|TOTAL|FONTE|Obs|Soma|
-                                       Circulação|Adicional")) |>
+                                       Circulação|Adicional|Impostos")) |>
     dplyr::select(!TOTAL) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
@@ -63,8 +63,14 @@ sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows()
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
+compilado_decodificador_endereço <-
+  paste0("https://github.com/WillianDambros/novocaged/",
+  "raw/main/compilado_decodificador.xlsx")
 
 decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
+
+curl::curl_download(compilado_decodificador_endereço,
+                    decodificador_endereco)
 
 decodificador_cnae <- readxl::read_xlsx(decodificador_endereco, sheet = "cnae",
                                         col_types = "text")
@@ -77,11 +83,39 @@ sefaz_icms_cnae <- sefaz_icms_cnae |>
     paste0("cnae_secao_codigo_sigla1d|cnae_divisao_codigo",
            "_2d|cnae_grupo_codigo_3d|cnae_classe_codigo_5d")))
 
+sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
+  SEÇÃO = dplyr::case_when(SEÇÃO == "OUTROS CNAE (*)" ~ "OUTROS CNAE",
+                           TRUE ~ SEÇÃO))
+
 # Writing novocaged
 
-nome_arquivo_csv <- "sefaz_mt_receita_icms_cnae"
+#nome_arquivo_csv <- "sefaz_mt_receita_icms_cnae"
 
-caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".csv")
 
-readr::write_csv2(sefaz_icms_cnae,
-                  caminho_arquivo)
+#readr::write_csv2(sefaz_icms_cnae,
+#                  caminho_arquivo)
+
+# writing PostgreSQL
+
+conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
+                                dbname = "######",
+                                host = "#######",
+                                port = "######",
+                                user = "########",
+                                password = "#########")
+
+RPostgres::dbListTables(conexao)
+
+schema_name <- "sefaz_mt"
+
+table_name <- "sefaz_mt_receita_icms_cnae"
+
+DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
+
+RPostgres::dbWriteTable(conexao,
+                        name = DBI::Id(schema = schema_name,table = table_name),
+                        value = sefaz_icms_cnae,
+                        row.names = FALSE, overwrite = TRUE)
+
+RPostgres::dbDisconnect(conexao)
