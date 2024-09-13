@@ -64,8 +64,8 @@ sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
 compilado_decodificador_endereço <-
-  paste0("https://github.com/WillianDambros/novocaged/",
-  "raw/main/compilado_decodificador.xlsx")
+  paste0("https://github.com/WillianDambros/data_source/",
+         "raw/main/compilado_decodificador.xlsx")
 
 decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
 
@@ -99,11 +99,11 @@ sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
 # writing PostgreSQL
 
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "######",
-                                host = "#######",
-                                port = "######",
-                                user = "########",
-                                password = "#########")
+                                dbname = "observatorio_db",
+                                host = "10.43.88.8",
+                                port = "5502",
+                                user = "admin",
+                                password = "adminadmin")
 
 RPostgres::dbListTables(conexao)
 
