@@ -30,13 +30,20 @@ process_icms_cnae_data <- function(entrada) {
                                      "date","date", "date", "date", "date",
                                      "date", "date", "date", "text"))
   # extracting column names
-  icms_cnae_names <- icms_cnae_names[5,]
+  icms_cnae_names <- icms_cnae_names |>
+    dplyr::filter(!dplyr::if_all(dplyr::everything(), is.na)) |>
+    dplyr::slice(2)
+#    dplyr::slice_head(n = 1)
+# Descobrir posteriormente o por que o slice não pega todas as planilhas,
+# e um metodo para concertar isso, para melhorar rowSumns()
+  
   # creating list to store values of a vector
   icms_cnae_names_vetor <- vector(length = ncol(icms_cnae_names))
   # store properly the values
   for(i in seq_along(icms_cnae_names)){
     icms_cnae_names_vetor[i] <- as.character(icms_cnae_names[[i]])
   }
+  
   # reading data
   icms_cnae <- readxl::read_excel(icms_cnae_arquivo, sheet = entrada,
                                   col_names = F, col_types = "text")
@@ -58,7 +65,10 @@ for(i in seq_along(icms_cnae_folhas)){
   
 }
 
-sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows()
+sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows() |>
+  dplyr::select(-`DESCRIÇÃO DO CNAE`)
+
+# verificar de onde sai a coluna `DESCRIÇÃO DO CNAE` não era para existir
 
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
@@ -97,13 +107,13 @@ sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
 #                  caminho_arquivo)
 
 # writing PostgreSQL
-
+sefaz_icms_cnae |> dplyr::glimpse()
 conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "observatorio_db",
-                                host = "10.43.88.8",
-                                port = "5502",
-                                user = "admin",
-                                password = "adminadmin")
+                                dbname = "#######",
+                                host = "######",
+                                port = "#######",
+                                user = "#######",
+                                password = "#########")
 
 RPostgres::dbListTables(conexao)
 
