@@ -2,22 +2,21 @@
 
 #### encontrar o bug da coluna que não sai, e remover os NA no R "" ou 0
 
-icms_cnae_endereco <- 
-  paste0("https://www5.sefaz.mt.gov.br/documents/6071037/51381700/",
-         "1-+ICMS+por+CNAE+e+Grupo+CNAE.xlsx/",
-         "0061779d-ce51-8852-fa19-94a757a5fad7?t=1695161941480")
+
+icms_cnae_endereco <- paste0("https://docs.google.com/spreadsheets/d/",
+                             "11xDwQuZmFpJJZxbu3nxMqDRhs7COma_e/export?format=xlsx")
 
 nome_destino <- 
   paste0(getwd(),
-         "/icms_cnae", ".xlsx")
+         "/sefaz_icms_cnae", ".xlsx")
 
 curl::curl_download(icms_cnae_endereco, nome_destino)
 
 # Transforming Microdata
 
-icms_cnae_arquivo <- paste0(getwd(), "/icms_cnae", ".xlsx")
+sefaz_icms_cnae_arquivo <- paste0(getwd(), "/sefaz_icms_cnae", ".xlsx")
 
-icms_cnae_folhas <- readxl::excel_sheets(icms_cnae_arquivo)
+icms_cnae_folhas <- readxl::excel_sheets(sefaz_icms_cnae_arquivo)
 
 icms_cnae_vetor <- vector(mode = 'list', length = (length(icms_cnae_folhas)))
 
@@ -33,9 +32,9 @@ process_icms_cnae_data <- function(entrada) {
   icms_cnae_names <- icms_cnae_names |>
     dplyr::filter(!dplyr::if_all(dplyr::everything(), is.na)) |>
     dplyr::slice(2)
-#    dplyr::slice_head(n = 1)
-# Descobrir posteriormente o por que o slice não pega todas as planilhas,
-# e um metodo para concertar isso, para melhorar rowSumns()
+  #    dplyr::slice_head(n = 1)
+  # Descobrir posteriormente o por que o slice não pega todas as planilhas,
+  # e um metodo para concertar isso, para melhorar rowSumns()
   
   # creating list to store values of a vector
   icms_cnae_names_vetor <- vector(length = ncol(icms_cnae_names))
@@ -73,9 +72,12 @@ sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows() |>
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
+
+sefaz_icms_cnae |> dplyr::glimpse()
+
 compilado_decodificador_endereço <-
   paste0("https://github.com/WillianDambros/data_source/",
-         "raw/main/compilado_decodificador.xlsx")
+         "raw/main/compilado_decodificador%20.xlsx")
 
 decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
 
@@ -97,6 +99,8 @@ sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
   SEÇÃO = dplyr::case_when(SEÇÃO == "OUTROS CNAE (*)" ~ "OUTROS CNAE",
                            TRUE ~ SEÇÃO))
 
+
+sefaz_icms_cnae |> dplyr::glimpse()
 # Writing novocaged
 
 #nome_arquivo_csv <- "sefaz_mt_receita_icms_cnae"
@@ -107,13 +111,8 @@ sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
 #                  caminho_arquivo)
 
 # writing PostgreSQL
-sefaz_icms_cnae |> dplyr::glimpse()
-conexao <- RPostgres::dbConnect(RPostgres::Postgres(),
-                                dbname = "#######",
-                                host = "######",
-                                port = "#######",
-                                user = "#######",
-                                password = "#########")
+
+source("X:/POWER BI/NOVOCAGED/conexao.R")
 
 RPostgres::dbListTables(conexao)
 
