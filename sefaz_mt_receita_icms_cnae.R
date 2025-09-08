@@ -2,9 +2,9 @@
 
 #### encontrar o bug da coluna que não sai, e remover os NA no R "" ou 0
 
-
-icms_cnae_endereco <- paste0("https://docs.google.com/spreadsheets/d/",
-                             "11xDwQuZmFpJJZxbu3nxMqDRhs7COma_e/export?format=xlsx")
+icms_cnae_endereco <- paste0("https://docs.google.com/spreadsheets/",
+                             "d/19hMlxBNISojCZnY5B1i468ziWH0U_tMU/",
+                             "export?format=xlsx")
 
 nome_destino <- 
   paste0(getwd(),
@@ -23,15 +23,18 @@ icms_cnae_vetor <- vector(mode = 'list', length = (length(icms_cnae_folhas)))
 process_icms_cnae_data <- function(entrada) {
   # read to define columns names
   icms_cnae_names <-
-    readxl::read_excel(icms_cnae_arquivo, sheet = entrada, col_names = F,
+    readxl::read_excel(sefaz_icms_cnae_arquivo, sheet = entrada, col_names = F,
                        col_types = c("text", "text", "text", "text","text",
                                      "text","date", "date", "date", "date",
                                      "date","date", "date", "date", "date",
                                      "date", "date", "date", "text"))
   # extracting column names
   icms_cnae_names <- icms_cnae_names |>
-    dplyr::filter(!dplyr::if_all(dplyr::everything(), is.na)) |>
-    dplyr::slice(2)
+    dplyr::mutate(non_na_count = rowSums(!is.na(dplyr::across(everything())))) |>
+    dplyr::filter(non_na_count > 3) |>
+    dplyr::slice(1) |>                   # só a primeira ocorrência
+    dplyr::select(-non_na_count)
+  
   #    dplyr::slice_head(n = 1)
   # Descobrir posteriormente o por que o slice não pega todas as planilhas,
   # e um metodo para concertar isso, para melhorar rowSumns()
@@ -44,7 +47,7 @@ process_icms_cnae_data <- function(entrada) {
   }
   
   # reading data
-  icms_cnae <- readxl::read_excel(icms_cnae_arquivo, sheet = entrada,
+  icms_cnae <- readxl::read_excel(sefaz_icms_cnae_arquivo, sheet = entrada,
                                   col_names = F, col_types = "text")
   
   icms_cnae <- icms_cnae |> dplyr::rename_with(~icms_cnae_names_vetor,
@@ -67,17 +70,16 @@ for(i in seq_along(icms_cnae_folhas)){
 sefaz_icms_cnae <- icms_cnae_vetor |> dplyr::bind_rows() |>
   dplyr::select(-`DESCRIÇÃO DO CNAE`)
 
+sefaz_icms_cnae$data_mes |> unique()
 # verificar de onde sai a coluna `DESCRIÇÃO DO CNAE` não era para existir
 
 sefaz_icms_cnae <- sefaz_icms_cnae |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
 
-sefaz_icms_cnae |> dplyr::glimpse()
-
 compilado_decodificador_endereço <-
   paste0("https://github.com/WillianDambros/data_source/",
-         "raw/main/compilado_decodificador%20.xlsx")
+         "raw/main/compilado_decodificador.xlsx")
 
 decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
 
@@ -98,6 +100,10 @@ sefaz_icms_cnae <- sefaz_icms_cnae |>
 sefaz_icms_cnae <- sefaz_icms_cnae |> dplyr::mutate(
   SEÇÃO = dplyr::case_when(SEÇÃO == "OUTROS CNAE (*)" ~ "OUTROS CNAE",
                            TRUE ~ SEÇÃO))
+
+
+sefaz_icms_cnae <- sefaz_icms_cnae |>
+  dplyr::mutate(data_mes = lubridate::ymd(data_mes)) 
 
 
 sefaz_icms_cnae |> dplyr::glimpse()
