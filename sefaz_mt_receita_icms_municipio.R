@@ -79,6 +79,76 @@ dplyr::filter(!stringr::str_detect(`COD Muncpo`, "TOTAL"))
 
 sefaz_mt_receita_icms_municipio |> dplyr::glimpse()
 sefaz_mt_receita_icms_municipio$`COD Muncpo` |> unique()
+
+####################################### Compilado_Decodificador ################
+
+compilado_decodificador_endereço <-
+  paste0("https://github.com/WillianDambros/data_source/raw/",
+         "refs/heads/main/compilado_decodificador.xlsx")
+
+decodificador_endereco <- paste0(getwd(), "/compilado_decodificador.xlsx")
+
+curl::curl_download(compilado_decodificador_endereço,
+                    decodificador_endereco)
+
+"compilado_decodificador.xlsx" |> readxl::excel_sheets()
+
+territorialidade_sedec <- 
+  readxl::read_excel("compilado_decodificador.xlsx",
+                     sheet =  "territorialidade_municipios_mt",
+                     col_types = "text") |>
+  dplyr::select("territorio_geo_munícipios",
+                "rpseplan10340_regiao_decodificado",
+                "imeia_regiao",
+                "territorio_latitude", "territorio_longitude")
+
+territorialidade_sedec <- territorialidade_sedec |>
+  dplyr::rename(municipios_decodificado = territorio_geo_munícipios)
+
+
+territorialidade_sedec <- territorialidade_sedec |>
+  dplyr::mutate(
+    municipios_decodificado = toupper(municipios_decodificado),
+    territorio_latitude = as.numeric(gsub(",", ".", territorio_latitude)),
+    territorio_longitude = as.numeric(gsub(",", ".", territorio_longitude))
+  )
+
+territorialidade_sedec <- territorialidade_sedec |>
+  dplyr::mutate(municipios_decodificado =
+                  gsub("[^[:alnum:] ]", "", iconv(municipios_decodificado,
+                                                  to = "ASCII//TRANSLIT")))
+territorialidade_sedec |> dplyr::glimpse()
+
+territorialidade_sedec <- territorialidade_sedec |>
+  dplyr::mutate(
+    municipios_decodificado = toupper(municipios_decodificado),
+    territorio_latitude = as.numeric(gsub(",", ".", territorio_latitude)),
+    territorio_longitude = as.numeric(gsub(",", ".", territorio_longitude))
+  )                                              
+
+territorialidade_sedec |> dplyr::glimpse()
+
+territorialidade_sedec <- territorialidade_sedec |>
+  dplyr::mutate(
+    municipios_decodificado = dplyr::recode(
+      municipios_decodificado,
+      "NOSSA SENHORA DO LIVRAMENTO" = "NOSSA SRA DO LIVRAMENTO",
+        "POXOREU" = "POXOREO"
+    )
+  )
+
+sefaz_mt_receita_icms_municipio <- sefaz_mt_receita_icms_municipio |>
+  fuzzyjoin::stringdist_left_join(
+    territorialidade_sedec,
+    by = c("Nome do Município" = "municipios_decodificado"),
+    method = "jw",          # Jaro-Winkler
+    max_dist = 0.05,        # tolerância de distância
+    distance_col = "dist"   # coluna com a distância calculada
+  )
+sefaz_mt_receita_icms_municipio |> dplyr::glimpse()
+################################################## Estabelecimentos ############
+
+
 # Writing novocaged
 
 #nome_arquivo_csv <- "sefaz_mt_receita_icms_municipio"
