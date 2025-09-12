@@ -1,18 +1,16 @@
 # Downloading archive ICMS_MUNICIPIO
 
 icms_municipio_endereco <- 
-  paste0("https://www5.sefaz.mt.gov.br/documents/6071037/51381700/",
-  "2-+Arrecada%C3%A7%C3%A3o+de+ICMS+por+Munic%C3%ADpio.xlsx/",
-  "dc1af857-6fa1-d122-cdb7-257efefb0985?t=1695161956181")
+  paste0("https://docs.google.com/spreadsheets/",
+         "d/1DbcU8-jdlG_DrQyVlhw7jnFXWug_Rx5l/",
+         "export?format=xlsx")
 
-arquivo_local <- paste0("Z:/rstudio/sefaz_mt/receita/",
-                  "sefaz_mt_receita_icms_municipio", ".xlsx")
+arquivo_local <- paste0(getwd(),
+                        "/sefaz_mt_receita_icms_municipio", ".xlsx")
 
 curl::curl_download(icms_municipio_endereco, arquivo_local)
 
 # Transforming Microdata
-
-#icms_cnae_arquivo <- nome_arquivo_destino
 
 arquivo_folhas <- readxl::excel_sheets(arquivo_local)
 
@@ -47,13 +45,14 @@ process_data <- function(entrada) {
   }
   # reading data
   arquivo <- readxl::read_excel(arquivo_local, sheet = entrada,
-                                  col_names = F, col_types = "text")
+                                col_names = F, col_types = "text")
   
   arquivo <- arquivo |> dplyr::rename_with(~arquivo_variaveis_vetor,
-                                               .cols = 1:ncol(arquivo))
+                                           .cols = 1:ncol(arquivo))
   
   arquivo <- arquivo |>
-    dplyr::filter(!stringr::str_detect(`COD Muncpo`, "COD|Total|Fonte")) |>
+    dplyr::filter(!stringr::str_detect(`COD Muncpo`,
+                                       "COD|Total|Fonte|Impostos|ICMS")) |>
     dplyr::select(!matches("Acumulado|TOTAL")) |>
     tidyr::pivot_longer(matches("\\d{4}-\\d{2}-\\d{2}"), names_to = "data_mes")
 }
@@ -71,11 +70,35 @@ arquivo_vetor <- arquivo_vetor |> dplyr::bind_rows()
 sefaz_mt_receita_icms_municipio <- arquivo_vetor |>
   dplyr::mutate(across(matches("value"), as.numeric))
 
+sefaz_mt_receita_icms_municipio <- sefaz_mt_receita_icms_municipio |>
+  dplyr::mutate(data_mes = lubridate::ymd(data_mes))
+
+sefaz_mt_receita_icms_municipio |> dplyr::glimpse()
+sefaz_mt_receita_icms_municipio$data_mes |> unique()
 # Writing novocaged
 
-nome_arquivo_csv <- "sefaz_mt_receita_icms_municipio"
+#nome_arquivo_csv <- "sefaz_mt_receita_icms_municipio"
 
-caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".txt")
+#caminho_arquivo <- paste0(getwd(), "/", nome_arquivo_csv, ".txt")
 
-readr::write_csv2(sefaz_mt_receita_icms_municipio,
-                  caminho_arquivo)
+#readr::write_csv2(sefaz_mt_receita_icms_municipio, caminho_arquivo)
+
+
+# writing PostgreSQL
+
+source("X:/POWER BI/NOVOCAGED/conexao.R")
+
+RPostgres::dbListTables(conexao)
+
+schema_name <- "sefaz_mt"
+
+table_name <- "sefaz_mt_receita_icms_municipio"
+
+DBI::dbSendQuery(conexao, paste0("CREATE SCHEMA IF NOT EXISTS ", schema_name))
+
+RPostgres::dbWriteTable(conexao,
+                        name = DBI::Id(schema = schema_name,table = table_name),
+                        value = sefaz_mt_receita_icms_municipio,
+                        row.names = FALSE, overwrite = TRUE)
+
+RPostgres::dbDisconnect(conexao)
