@@ -73,8 +73,12 @@ sefaz_mt_receita_icms_municipio <- arquivo_vetor |>
 sefaz_mt_receita_icms_municipio <- sefaz_mt_receita_icms_municipio |>
   dplyr::mutate(data_mes = lubridate::ymd(data_mes))
 
+sefaz_mt_receita_icms_municipio <- sefaz_mt_receita_icms_municipio |> 
+dplyr::filter(!stringr::str_detect(`COD Muncpo`, "TOTAL"))
+
+
 sefaz_mt_receita_icms_municipio |> dplyr::glimpse()
-sefaz_mt_receita_icms_municipio$data_mes |> unique()
+sefaz_mt_receita_icms_municipio$`COD Muncpo` |> unique()
 # Writing novocaged
 
 #nome_arquivo_csv <- "sefaz_mt_receita_icms_municipio"
