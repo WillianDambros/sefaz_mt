@@ -1,14 +1,18 @@
 # Downloading arquive ICMS_CNAE
 
+# Endereço Geral
+
+# https://www5.sefaz.mt.gov.br/-/6847228-receita
+
 #### encontrar o bug da coluna que não sai, e remover os NA no R "" ou 0
 
-icms_cnae_endereco <- paste0("https://docs.google.com/spreadsheets/",
-                             "d/19hMlxBNISojCZnY5B1i468ziWH0U_tMU/",
+icms_cnae_endereco <- paste0("https://docs.google.com/spreadsheets/d/",
+                             "1RD2CBYrJrqHxG9-c4SznDjXpCrckTVtv/",
                              "export?format=xlsx")
 
 nome_destino <- 
   paste0(getwd(),
-         "/sefaz_icms_cnae", ".xlsx")
+         "/sefaz_icms_cnae.xlsx")
 
 curl::curl_download(icms_cnae_endereco, nome_destino)
 
