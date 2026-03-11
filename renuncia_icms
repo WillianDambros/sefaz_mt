@@ -1,4 +1,3 @@
-
 ######################################################### renuncia ICMS ########
 
 #googlesheets4::sheet_names("https://docs.google.com/spreadsheets/d/16j0h8IPX8tBjIQMnkXn6zHJ33qBlkRBX0SerzTlofBI")
@@ -46,6 +45,26 @@ arquivo <- arquivo |>
                    by = dplyr::join_by(CODG_CNAE ==
                                          cnae_subclasse_codigo_7d_sem0))
 
+
+territorialidade_sedec <- 
+  readxl::read_excel("compilado_decodificador.xlsx",
+                     sheet =  "territorialidade_municipios_mt",
+                     col_types = "text") |>
+  dplyr::select("territorio_municipio_codigo_7d",
+                "territorio_municipionovocaged_codigo_6d",
+                "rpseplan10340_munícipio_polo_decodificado",
+                "rpseplan10340_regiao_decodificado",
+                "imeia_regiao",
+                "imeia_municipios_polo_economico",
+                "territorio_latitude", "territorio_longitude")
+
+
+arquivo <- arquivo |> 
+  dplyr::left_join(territorialidade_sedec,
+                   by = dplyr::join_by(CODG_IBGE ==
+                                         territorio_municipio_codigo_7d))
+
+arquivo |> dplyr::glimpse()
 
 source("X:/POWER BI/NOVOCAGED/conexao.R")
 
