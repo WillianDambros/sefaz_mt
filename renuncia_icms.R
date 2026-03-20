@@ -1,3 +1,4 @@
+
 ######################################################### renuncia ICMS ########
 
 #googlesheets4::sheet_names("https://docs.google.com/spreadsheets/d/16j0h8IPX8tBjIQMnkXn6zHJ33qBlkRBX0SerzTlofBI")
@@ -56,8 +57,15 @@ territorialidade_sedec <-
                 "rpseplan10340_regiao_decodificado",
                 "imeia_regiao",
                 "imeia_municipios_polo_economico",
-                "territorio_latitude", "territorio_longitude")
-
+                "territorio_latitude", "territorio_longitude") |>
+  dplyr::mutate(
+    territorio_latitude =
+      readr::parse_number(territorio_latitude,
+                          locale = readr::locale(decimal_mark = ",")),
+    territorio_longitude =
+      readr::parse_number(territorio_longitude,
+                          locale = readr::locale(decimal_mark = ","))
+  )
 
 arquivo <- arquivo |> 
   dplyr::left_join(territorialidade_sedec,
@@ -65,7 +73,7 @@ arquivo <- arquivo |>
                                          territorio_municipio_codigo_7d))
 
 arquivo |> dplyr::glimpse()
-
+  
 source("X:/POWER BI/NOVOCAGED/conexao.R")
 
 RPostgres::dbListTables(conexao)
